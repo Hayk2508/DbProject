@@ -237,5 +237,13 @@ def delete_robbery(robbery_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Robbery deleted successfully"}
 
+
+@app.get("/banks/filter/", response_model=list[BankResponse])
+def get_filtered_banks(attractiveness: int = 1, security_level: int = 1,  db: Session = Depends(get_db)):
+    return db.query(Bank).filter(Bank.attractiveness >= attractiveness, Bank.security_level >= security_level).all()
+
+
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8002)
