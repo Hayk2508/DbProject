@@ -187,7 +187,6 @@ def delete_bank(bank_id: int, db: Session = Depends(get_db)):
     return {"message": "Bank deleted successfully"}
 
 
-
 @app.post("/robberies/", response_model=RobberyResponse)
 def create_robbery(robbery: RobberyBase, db: Session = Depends(get_db)):
     new_robbery = Robbery(**robbery.dict())
@@ -195,14 +194,16 @@ def create_robbery(robbery: RobberyBase, db: Session = Depends(get_db)):
         db.add(new_robbery)
         db.commit()
         db.refresh(new_robbery)
-        return {"message": "Robbery created successfully", "robbery": new_robbery}
+        return new_robbery
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Invalid bank_id or gang_member_id.")
 
+
 @app.get("/robberies/", response_model=list[RobberyResponse])
 def get_all_robberies(db: Session = Depends(get_db)):
     return db.query(Robbery).all()
+
 
 @app.get("/robberies/{robbery_id}", response_model=RobberyResponse)
 def get_robbery(robbery_id: int, db: Session = Depends(get_db)):
@@ -212,6 +213,7 @@ def get_robbery(robbery_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Robbery not found")
 
     return robbery
+
 
 @app.put("/robberies/{robbery_id}", response_model=RobberyResponse)
 def update_robbery(robbery_id: int, robbery: RobberyBase, db: Session = Depends(get_db)):
@@ -228,6 +230,7 @@ def update_robbery(robbery_id: int, robbery: RobberyBase, db: Session = Depends(
 
     return existing_robbery
 
+
 @app.delete("/robberies/{robbery_id}")
 def delete_robbery(robbery_id: int, db: Session = Depends(get_db)):
     robbery = db.query(Robbery).filter(Robbery.id == robbery_id).first()
@@ -239,10 +242,15 @@ def delete_robbery(robbery_id: int, db: Session = Depends(get_db)):
 
 
 @app.get("/banks/filter/", response_model=list[BankResponse])
-def get_filtered_banks(attractiveness: int = 1, security_level: int = 1,  db: Session = Depends(get_db)):
+def get_filtered_banks(attractiveness: int = 1, security_level: int = 1, db: Session = Depends(get_db)):
     return db.query(Bank).filter(Bank.attractiveness >= attractiveness, Bank.security_level >= security_level).all()
 
 
+@app.get("/robberies/details/")
+def get_robbery_details(db: Session = Depends(get_db)):
+    robberies = db.query(Robbery, Bank.name).join(Bank, Robbery.bank_id == Bank.id).all()
+    return [{"id": robbery.id, "robbery_date": robbery.robbery_date, "action_rating": robbery.action_rating, "bank": bank}
+            for robbery, bank in robberies]
 
 
 if __name__ == "__main__":
