@@ -40,6 +40,8 @@ class GangMemberBase(BaseModel):
     specialization: str
     level: int
     join_date: date
+    weight: float
+    height: float
 
 
 class GangMemberResponse(GangMemberBase):
