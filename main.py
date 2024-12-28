@@ -31,7 +31,7 @@ Base.metadata.create_all(bind=get_connection())
 app = FastAPI()
 
 
-class GangMembers(BaseModel):
+class GangMemberBase(BaseModel):
     nickname: str
     status: str
     contacts: str
@@ -40,7 +40,7 @@ class GangMembers(BaseModel):
     join_date: date
 
 
-class GangMemberResponse(GangMembers):
+class GangMemberResponse(GangMemberBase):
     id: int
 
     class Config:
@@ -62,8 +62,11 @@ class BankResponse(BankBase):
         orm_mode = True
 
 
+
+
+
 @app.post("/gang_members/", response_model=GangMemberResponse)
-def create_gang_member(gang_member: GangMembers, db: Session = Depends(get_db)):
+def create_gang_member(gang_member: GangMemberBase, db: Session = Depends(get_db)):
     new_gang_member = GangMember(**gang_member.dict())
 
     db.add(new_gang_member)
@@ -87,7 +90,7 @@ def get_gang_member(member_id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/gang_members/{member_id}", response_model=GangMemberResponse)
-def update_gang_member(member_id: int, gang_member: GangMembers, db: Session = Depends(get_db)):
+def update_gang_member(member_id: int, gang_member: GangMemberBase, db: Session = Depends(get_db)):
     member = db.query(GangMember).filter(GangMember.id == member_id).first()
 
     if not member:
@@ -165,14 +168,6 @@ def delete_bank(bank_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Bank deleted successfully"}
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
