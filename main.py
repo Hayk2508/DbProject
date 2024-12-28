@@ -3,6 +3,8 @@ from datetime import date
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError
+
 from settings import POSTGRES_USER, POSTGRES_PASSWORD, host, port, POSTGRES_DB
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -62,7 +64,20 @@ class BankResponse(BankBase):
         orm_mode = True
 
 
+class RobberyBase(BaseModel):
+    robbery_date: date
+    action_rating: int
+    bandit_outcome: str
+    share: float
+    gang_member_id: int
+    bank_id: int
 
+
+class RobberyResponse(RobberyBase):
+    id: int
+
+    class Config:
+        orm_mode = True
 
 
 @app.post("/gang_members/", response_model=GangMemberResponse)
@@ -169,6 +184,56 @@ def delete_bank(bank_id: int, db: Session = Depends(get_db)):
 
     return {"message": "Bank deleted successfully"}
 
+
+
+@app.post("/robberies/", response_model=RobberyResponse)
+def create_robbery(robbery: RobberyBase, db: Session = Depends(get_db)):
+    new_robbery = Robbery(**robbery.dict())
+    try:
+        db.add(new_robbery)
+        db.commit()
+        db.refresh(new_robbery)
+        return {"message": "Robbery created successfully", "robbery": new_robbery}
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Invalid bank_id or gang_member_id.")
+
+@app.get("/robberies/", response_model=list[RobberyResponse])
+def get_all_robberies(db: Session = Depends(get_db)):
+    return db.query(Robbery).all()
+
+@app.get("/robberies/{robbery_id}", response_model=RobberyResponse)
+def get_robbery(robbery_id: int, db: Session = Depends(get_db)):
+    robbery = db.query(Robbery).filter(Robbery.id == robbery_id).first()
+
+    if not robbery:
+        raise HTTPException(status_code=404, detail="Robbery not found")
+
+    return robbery
+
+@app.put("/robberies/{robbery_id}", response_model=RobberyResponse)
+def update_robbery(robbery_id: int, robbery: RobberyBase, db: Session = Depends(get_db)):
+    existing_robbery = db.query(Robbery).filter(Robbery.id == robbery_id).first()
+
+    if not existing_robbery:
+        raise HTTPException(status_code=404, detail="Robbery not found")
+
+    for key, value in robbery.dict().items():
+        setattr(existing_robbery, key, value)
+
+    db.commit()
+    db.refresh(existing_robbery)
+
+    return existing_robbery
+
+@app.delete("/robberies/{robbery_id}")
+def delete_robbery(robbery_id: int, db: Session = Depends(get_db)):
+    robbery = db.query(Robbery).filter(Robbery.id == robbery_id).first()
+    if not robbery:
+        raise HTTPException(status_code=404, detail="Robbery not found")
+    db.delete(robbery)
+    db.commit()
+    return {"message": "Robbery deleted successfully"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8002)
