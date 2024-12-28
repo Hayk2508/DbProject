@@ -69,7 +69,7 @@ class BankResponse(BankBase):
 class RobberyBase(BaseModel):
     robbery_date: date
     action_rating: int
-    bandit_outcome: str
+    bandit_outcome: int
     share: float
     gang_member_id: int
     bank_id: int

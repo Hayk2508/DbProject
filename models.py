@@ -44,7 +44,7 @@ class Robbery(Base):
     id = Column(Integer, primary_key=True, index=True)
     robbery_date = Column(Date)
     action_rating = Column(Integer)
-    bandit_outcome = Column(Text)
+    bandit_outcome = Column(Integer)
     share = Column(DECIMAL(5, 2))
 
     gang_member_id = Column(Integer, ForeignKey('gang_members.id'), nullable=False)
