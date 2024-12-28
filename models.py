@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, DECIMAL, Text
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, DECIMAL, Text, Index
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -14,6 +14,13 @@ class GangMember(Base):
     specialization = Column(String(100))
     level = Column(Integer)
     join_date = Column(Date)
+
+    weight = Column(DECIMAL, nullable=True)
+    height = Column(DECIMAL, nullable=True)
+
+    __table_args__ = (
+        Index('ix_nickname', 'nickname'),
+    )
 
     robberies = relationship("Robbery", back_populates="gang_member")
 
